@@ -29,6 +29,7 @@ module "ensitech_ec2" {
               #!/bin/bash
               sudo dnf update
               sudo dnf install nginx -y
+              sudo systemctl start nginx
               EOF
   root_block_device = [
     {
