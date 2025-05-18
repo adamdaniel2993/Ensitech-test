@@ -28,7 +28,7 @@ module "ensitech_ec2" {
   user_data = <<-EOF
               #!/bin/bash
               sudo dnf update
-              sudo dnf install postgresql15.x86_64 postgresql15-server -y
+              sudo dnf install nginx -y
               EOF
   root_block_device = [
     {
