@@ -9,7 +9,7 @@ module "vpc" {
   name = "${var.tenant}-${var.environment}-vpc"
   cidr = var.vpc_cird_block
 
-  azs             = ["us-east-2a", "us-east-2b"]
+  azs             = ["us-east-1a", "us-east-1b"]
   private_subnets = [local.vpc_subnets[0], local.vpc_subnets[1]]
   public_subnets  = [local.vpc_subnets[2], local.vpc_subnets[3]]
 
