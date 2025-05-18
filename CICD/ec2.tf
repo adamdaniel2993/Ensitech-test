@@ -23,7 +23,7 @@ module "ensitech_ec2" {
   instance_type = "t3.medium"
   subnet_id     = module.vpc.public_subnets[0]
   vpc_security_group_ids = [aws_security_group.ensitech_ec2_sg.id]
-  key_name               = "heard-ec2"
+  key_name               = "test-key"
   associate_public_ip_address = true
   user_data = <<-EOF
               #!/bin/bash
