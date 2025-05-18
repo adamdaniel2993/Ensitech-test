@@ -1,0 +1,103 @@
+name: "Terraform Code Create EC2 Challenge"
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  terraform:
+    name: "Terraform"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.9.0
+
+      - name: Terraform Init
+        id: init
+        working-directory: ./CICD
+        run: terraform init
+
+      - name: Terraform Format
+        id: fmt
+        working-directory: ./CICD
+        run: terraform fmt
+
+      - name: Terraform Validate
+        id: validate
+        working-directory: ./CICD
+        run: terraform validate
+
+      - name: Terraform Plan
+        id: plan
+        working-directory: ./CICD
+        run: terraform plan -no-color -input=false
+        continue-on-error: true
+
+      - uses: actions/github-script@v7
+        env:
+          PLAN: "${{ steps.plan.outputs.stdout }}"
+        with:
+          script: |
+            const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
+            #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+            <details><summary>Validation Output</summary>
+  
+            \`\`\`\n
+            ${{ steps.validate.outputs.stdout }}
+            \`\`\`
+  
+            </details>
+  
+            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+  
+            <details><summary>Show Plan</summary>
+  
+            \`\`\`\n
+            ${process.env.PLAN}
+            \`\`\`
+  
+            </details>
+  
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`./CICD\`, Workflow: \`${{ github.workflow }}\`*`;
+  
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+
+      - name: Terraform Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+      - name: Terraform Apply
+        working-directory: ./CICD
+        run: terraform apply -auto-approve -input=false
